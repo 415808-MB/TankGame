@@ -4,8 +4,8 @@ class Tank {
   char idir;
 
   Tank() {
-    x = 100;
-    y = 100;
+    x = 250;
+    y = 400;
     w = 100;
     h = 100;
     speed = 5;
@@ -33,8 +33,5 @@ class Tank {
     else if (dir == 's') { idir = 's'; y += speed; }
     else if (dir == 'a') { idir = 'a'; x -= speed; }
     else if (dir == 'd') { idir = 'd'; x += speed; }
-  }
-
-  void fire() {
   }
 }

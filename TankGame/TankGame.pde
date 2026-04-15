@@ -1,8 +1,13 @@
 // Max Baker | April 1st 2026 | TankGame
 
 Tank t1;
-ArrayList<Obstacle> obstacles;
+Obstacle enemy;
+ArrayList<Projectile> shots;
+
 PImage bg;
+
+int score = 0;
+int ammo = 20;
 
 void setup() {
   size(500, 500);
@@ -10,35 +15,37 @@ void setup() {
   t1 = new Tank();
   bg = loadImage("Background.png");
 
-  obstacles = new ArrayList<Obstacle>();
+  enemy = new Obstacle(
+    width/2, 100,    
+    80, 80,        
+    2,   // speed
+    100, // health
+    0                
+  );
 
-  for (int i = 0; i < 7; i++) {
-    float ox = random(0, width);
-    float oy = random(-300, -50);
-    float ow = random(40, 70);
-    float oh = random(30, 60);
-    float ospeed = random(1, 2.5);
-    float ohealth = 100;
-
-    int type = int(random(4));
-
-    obstacles.add(new Obstacle(ox, oy, ow, oh, ospeed, ohealth, type));
-  }
+  shots = new ArrayList<Projectile>();
 }
 
 void draw() {
   background(bg);
 
+  // Score panel
+  fill(255);
+  textSize(20);
+  text("Score: " + score, 20, 30);
+  text("Ammo: " + ammo, 20, 55);
+
+  // Player tank
   t1.display();
 
-  for (Obstacle o : obstacles) {
-    o.move();
-    o.display();
+  // Enemy tank obstacle
+  enemy.move();
+  enemy.display();
 
-    if (o.y > height) {
-      o.y = random(-200, -50);
-      o.x = random(0, width);
-    }
+  // Projectiles
+  for (Projectile p : shots) {
+    p.move();
+    p.display();
   }
 }
 
@@ -47,4 +54,11 @@ void keyPressed() {
   else if (key == 's') t1.move('s');
   else if (key == 'a') t1.move('a');
   else if (key == 'd') t1.move('d');
+}
+
+void mousePressed() {
+  if (ammo > 0) {
+    shots.add(new Projectile(t1.x, t1.y, t1.idir));
+    ammo--;
+  }
 }
