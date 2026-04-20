@@ -1,37 +1,56 @@
 class Tank {
   float x, y, w, h, speed, health;
-  PImage iTankW, iTankA, iTankD, iTankS;
-  char idir;
+  PImage baseImg;  // one tank image pointing UP
 
   Tank() {
     x = 250;
     y = 400;
     w = 100;
     h = 100;
-    speed = 5;
+    speed = 4;
     health = 75;
 
-    iTankS = loadImage("TankS.png");
-    iTankA = loadImage("TankA.png");
-    iTankD = loadImage("TankD.png");
-    iTankW = loadImage("TankW.png");
-
-    idir = 'w';
+    // Use the UP-facing tank image
+    baseImg = loadImage("TankW.png");
   }
 
   void display() {
-    imageMode(CENTER);
+    pushMatrix();
+    translate(x, y);
 
-    if (idir == 'w') image(iTankW, x, y);
-    else if (idir == 'a') image(iTankA, x, y);
-    else if (idir == 'd') image(iTankD, x, y);
-    else if (idir == 's') image(iTankS, x, y);
+    // Angle from tank to mouse
+    float angle = atan2(mouseY - y, mouseX - x);
+
+    rotate(angle + HALF_PI); // adjust based on sprite orientation
+
+    imageMode(CENTER);
+    image(baseImg, 0, 0, w, h);
+
+    popMatrix();
   }
 
   void move(char dir) {
-    if (dir == 'w') { idir = 'w'; y -= speed; }
-    else if (dir == 's') { idir = 's'; y += speed; }
-    else if (dir == 'a') { idir = 'a'; x -= speed; }
-    else if (dir == 'd') { idir = 'd'; x += speed; }
+    float angle = atan2(mouseY - y, mouseX - x);
+
+    if (dir == 'w') {
+      x += cos(angle) * speed;
+      y += sin(angle) * speed;
+    }
+    if (dir == 's') {
+      x -= cos(angle) * speed;
+      y -= sin(angle) * speed;
+    }
+    if (dir == 'a') {
+      x += cos(angle + HALF_PI) * speed;
+      y += sin(angle + HALF_PI) * speed;
+    }
+    if (dir == 'd') {
+      x += cos(angle - HALF_PI) * speed;
+      y += sin(angle - HALF_PI) * speed;
+    }
+
+    // Keep tank on screen
+    x = constrain(x, w/2, width - w/2);
+    y = constrain(y, h/2, height - h/2);
   }
 }

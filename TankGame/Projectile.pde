@@ -1,12 +1,20 @@
 class Projectile {
   float x, y;
+  float vx, vy;
   float speed = 7;
-  char dir;
 
-  Projectile(float x, float y, char dir) {
-    this.x = x;
-    this.y = y;
-    this.dir = dir;
+  Projectile(float sx, float sy, float tx, float ty) {
+    x = sx;
+    y = sy;
+
+    float dx = tx - sx;
+    float dy = ty - sy;
+
+    float len = dist(sx, sy, tx, ty);
+    if (len == 0) len = 0.0001;
+
+    vx = dx / len * speed;
+    vy = dy / len * speed;
   }
 
   void display() {
@@ -15,9 +23,11 @@ class Projectile {
   }
 
   void move() {
-    if (dir == 'w') y -= speed;
-    else if (dir == 's') y += speed;
-    else if (dir == 'a') x -= speed;
-    else if (dir == 'd') x += speed;
+    x += vx;
+    y += vy;
+  }
+
+  boolean offScreen() {
+    return x < 0 || x > width || y < 0 || y > height;
   }
 }
