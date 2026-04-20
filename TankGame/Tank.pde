@@ -1,6 +1,6 @@
 class Tank {
   float x, y, w, h, speed, health;
-  PImage baseImg;  // one tank image pointing UP
+  PImage baseImg;
 
   Tank() {
     x = 250;
@@ -10,7 +10,6 @@ class Tank {
     speed = 4;
     health = 75;
 
-    // Use the UP-facing tank image
     baseImg = loadImage("TankW.png");
   }
 
@@ -18,10 +17,8 @@ class Tank {
     pushMatrix();
     translate(x, y);
 
-    // Angle from tank to mouse
     float angle = atan2(mouseY - y, mouseX - x);
-
-    rotate(angle + HALF_PI); // adjust based on sprite orientation
+    rotate(angle + HALF_PI);
 
     imageMode(CENTER);
     image(baseImg, 0, 0, w, h);
@@ -49,7 +46,6 @@ class Tank {
       y += sin(angle - HALF_PI) * speed;
     }
 
-    // Keep tank on screen
     x = constrain(x, w/2, width - w/2);
     y = constrain(y, h/2, height - h/2);
   }

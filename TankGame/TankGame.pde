@@ -1,7 +1,7 @@
 // Max Baker | April 1st 2026 | TankGame
 
 Tank t1;
-Obstacle enemy;
+ArrayList<Obstacle> obstacles;
 ArrayList<Projectile> shots;
 
 PImage bg;
@@ -11,27 +11,27 @@ int ammo = 20;
 
 boolean up, down, left, right;
 
+Timer spawnTimer;
+
 void setup() {
   size(500, 500);
 
   t1 = new Tank();
   bg = loadImage("Background.png");
 
-  enemy = new Obstacle(
-    width/2, 100,
-    80, 80,
-    2,
-    100,
-    0
-  );
+  obstacles = new ArrayList<Obstacle>();
+  obstacles.add(new Obstacle(width/2, 100, 80, 80, 2, 100, 0)); // enemy tank
 
   shots = new ArrayList<Projectile>();
+
+  spawnTimer = new Timer(2000); // spawn every 2 seconds
+  spawnTimer.start();
 }
 
 void draw() {
   background(bg);
 
-  // Score panel
+  // UI
   fill(255);
   textSize(20);
   text("Score: " + score, 20, 30);
@@ -44,8 +44,25 @@ void draw() {
 
   t1.display();
 
-  enemy.move();
-  enemy.display();
+  if (spawnTimer.isFinished()) {
+    int t = int(random(0, 3)); // 0 = tank, 1 = rock, 2 = sandbag
+
+    obstacles.add(new Obstacle(
+      random(50, width - 50),
+      random(50, height / 2),
+      80, 80,
+      random(0.5, 2.5),
+      100,
+      t
+    ));
+
+    spawnTimer.start();
+  }
+
+  for (Obstacle o : obstacles) {
+    o.move();
+    o.display();
+  }
 
   for (int i = shots.size() - 1; i >= 0; i--) {
     Projectile p = shots.get(i);
@@ -54,6 +71,21 @@ void draw() {
 
     if (p.offScreen()) {
       shots.remove(i);
+    }
+  }
+
+  for (int i = obstacles.size() - 1; i >= 0; i--) {
+    Obstacle o = obstacles.get(i);
+
+    for (int j = shots.size() - 1; j >= 0; j--) {
+      Projectile p = shots.get(j);
+
+      if (o.intersect(p)) {
+        score += 10;
+        shots.remove(j);
+        obstacles.remove(i);
+        break;
+      }
     }
   }
 }

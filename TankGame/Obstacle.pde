@@ -2,11 +2,16 @@ class Obstacle {
   float x, y, w, h, speed, health;
   int type;
 
-  PImage imgW, imgA, imgS, imgD;
+  // Images
+  PImage imgW, imgA, imgS, imgD; // enemy tank
+  PImage rockImg, sandbagImg;
+
   PImage currentImg;
 
-  float direction = 1;   
-  char idir = 'd';    
+  float direction = 1;
+  char idir = 'd';
+
+  Timer respawnTimer;
 
   Obstacle(float x, float y, float w, float h, float speed, float health, int type) {
     this.x = x;
@@ -20,9 +25,17 @@ class Obstacle {
     imgW = loadImage("ObstacleW.png");
     imgA = loadImage("ObstacleA.png");
     imgS = loadImage("ObstacleS.png");
-    imgD = loadImage("ObstacleD.png");
+    imgD = lowadImage("ObstacleD.png");
 
-    currentImg = imgD; 
+    rockImg = loadImage("Rock.png");
+    sandbagImg = loadImage("Sandbag.png");
+
+    if (type == 0) currentImg = imgD;        // enemy tank
+    if (type == 1) currentImg = rockImg;     // rock
+    if (type == 2) currentImg = sandbagImg;  // sandbag
+
+    respawnTimer = new Timer(5000);
+    respawnTimer.start();
   }
 
   void display() {
@@ -31,20 +44,33 @@ class Obstacle {
   }
 
   void move() {
-    x += speed * direction;
+    if (type == 0) {
+      x += speed * direction;
 
-    if (x < 50) {
-      direction = 1;
-      idir = 'd';    
-    }
-    if (x > width - 50) {
-      direction = -1;
-      idir = 'a'; 
+      if (x < 50) {
+        direction = 1;
+        idir = 'd';
+      }
+      if (x > width - 50) {
+        direction = -1;
+        idir = 'a';
+      }
+
+      if (idir == 'w') currentImg = imgW;
+      else if (idir == 'a') currentImg = imgA;
+      else if (idir == 'd') currentImg = imgD;
+      else if (idir == 's') currentImg = imgS;
     }
 
-    if (idir == 'w') currentImg = imgW;
-    else if (idir == 'a') currentImg = imgA;
-    else if (idir == 'd') currentImg = imgD;
-    else if (idir == 's') currentImg = imgS;
+    if (respawnTimer.isFinished()) {
+      x = random(50, width - 50);
+      y = random(50, height / 2);
+      respawnTimer.start();
+    }
+  }
+
+  boolean intersect(Projectile p) {
+    float d = dist(x, y, p.x, p.y);
+    return d < (w/2 + 5);
   }
 }
