@@ -1,5 +1,5 @@
 class Tank {
-  float x, y, w, h, speed, health;
+  float x, y, w, h, speed, health, maxHealth;
   PImage baseImg;
 
   Tank() {
@@ -8,7 +8,8 @@ class Tank {
     w = 100;
     h = 100;
     speed = 4;
-    health = 75;
+    maxHealth = 75;
+    health = maxHealth;
 
     baseImg = loadImage("TankW.png");
   }
@@ -24,6 +25,20 @@ class Tank {
     image(baseImg, 0, 0, w, h);
 
     popMatrix();
+
+    // Health bar under player
+    float barWidth = 80;
+    float barHeight = 8;
+    float hx = x - barWidth/2;
+    float hy = y + h/2 + 10;
+
+    noStroke();
+    fill(100, 0, 0);
+    rect(hx, hy, barWidth, barHeight);
+
+    float healthRatio = constrain(health / maxHealth, 0, 1);
+    fill(0, 200, 0);
+    rect(hx, hy, barWidth * healthRatio, barHeight);
   }
 
   void move(char dir) {

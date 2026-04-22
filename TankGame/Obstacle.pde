@@ -11,8 +11,6 @@ class Obstacle {
   float direction = 1;
   char idir = 'd';
 
-  Timer respawnTimer;
-
   Obstacle(float x, float y, float w, float h, float speed, float health, int type) {
     this.x = x;
     this.y = y;
@@ -25,7 +23,7 @@ class Obstacle {
     imgW = loadImage("ObstacleW.png");
     imgA = loadImage("ObstacleA.png");
     imgS = loadImage("ObstacleS.png");
-    imgD = lowadImage("ObstacleD.png");
+    imgD = loadImage("ObstacleD.png");
 
     rockImg = loadImage("Rock.png");
     sandbagImg = loadImage("Sandbag.png");
@@ -33,9 +31,6 @@ class Obstacle {
     if (type == 0) currentImg = imgD;        // enemy tank
     if (type == 1) currentImg = rockImg;     // rock
     if (type == 2) currentImg = sandbagImg;  // sandbag
-
-    respawnTimer = new Timer(5000);
-    respawnTimer.start();
   }
 
   void display() {
@@ -61,16 +56,15 @@ class Obstacle {
       else if (idir == 'd') currentImg = imgD;
       else if (idir == 's') currentImg = imgS;
     }
-
-    if (respawnTimer.isFinished()) {
-      x = random(50, width - 50);
-      y = random(50, height / 2);
-      respawnTimer.start();
-    }
   }
 
   boolean intersect(Projectile p) {
     float d = dist(x, y, p.x, p.y);
     return d < (w/2 + 5);
+  }
+
+  boolean intersectsTank(Tank t) {
+    float d = dist(x, y, t.x, t.y);
+    return d < (w/2 + t.w/2);
   }
 }

@@ -27,7 +27,7 @@ class Projectile {
     y += vy;
   }
 
-  boolean offScreen() {
+  boolean reachedEdge() {
     return x < 0 || x > width || y < 0 || y > height;
   }
 }
