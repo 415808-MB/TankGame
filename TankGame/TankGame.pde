@@ -5,6 +5,13 @@ ArrayList<Obstacle> obstacles;
 ArrayList<Projectile> shots;
 ArrayList<Landmine> mines;
 ArrayList<Explosion> explosions;
+ArrayList<PowerUp> powerups;
+
+Timer powerUpTimer;
+Timer spawnTimer;
+
+boolean rapidFire = false;
+int rapidFireTimer = 0;
 
 PImage bg;
 
@@ -13,9 +20,6 @@ int ammo = 20;
 int maxAmmo = 20;
 
 boolean up, down, left, right;
-
-Timer spawnTimer;
-
 boolean gameOver = false;
 
 void setup() {
@@ -25,43 +29,49 @@ void setup() {
   bg = loadImage("Background.png");
 
   obstacles = new ArrayList<Obstacle>();
-  obstacles.add(new Obstacle(width/2, 100, 80, 80, 2, 100, 0)); // enemy tank
+  obstacles.add(new Obstacle(width/2, 100, 80, 80, 2, 100, 0)); 
 
   shots = new ArrayList<Projectile>();
   mines = new ArrayList<Landmine>();
   explosions = new ArrayList<Explosion>();
+  powerups = new ArrayList<PowerUp>();
 
   for (int i = 0; i < 5; i++) {
-    mines.add(new Landmine(
-      random(50, width - 50),
-      random(150, height - 50)
-    ));
+    mines.add(new Landmine(random(50, width - 50), random(150, height - 50)));
   }
 
-  spawnTimer = new Timer(2000); // spawn every 2 seconds
+  spawnTimer = new Timer(1000);
   spawnTimer.start();
+
+  powerUpTimer = new Timer(8000);
+  powerUpTimer.start();
 }
 
 void draw() {
-  background(bg);
+  if (bg != null) {
+    background(bg);
+  } else {
+    background(50);
+  }
 
   if (gameOver) {
     drawGameOverScreen();
     return;
   }
 
+  // Movement
   if (up) t1.move('w');
   if (down) t1.move('s');
   if (left) t1.move('a');
   if (right) t1.move('d');
 
+  // Landmines
   for (int i = mines.size() - 1; i >= 0; i--) {
     Landmine m = mines.get(i);
     m.display();
 
     for (int j = shots.size() - 1; j >= 0; j--) {
-      Projectile p = shots.get(j);
-      if (m.hitBy(p)) {
+      if (m.hitBy(shots.get(j))) {
         explosions.add(new Explosion(m.x, m.y));
         shots.remove(j);
         mines.remove(i);
@@ -76,35 +86,60 @@ void draw() {
     }
   }
 
+//PowerUp
+  if (powerUpTimer.isFinished()) {
+    powerups.add(new PowerUp(random(50, width - 50), -40));
+    powerUpTimer.start();
+  }
+
+  for (int i = powerups.size() - 1; i >= 0; i--) {
+    PowerUp p = powerups.get(i);
+    p.move();
+    p.display();
+
+    if (p.intersectsTank(t1)) {
+      if (p.type == 0) { 
+        rapidFire = true;
+        rapidFireTimer = millis() + 5000;
+      }
+      if (p.type == 1) { 
+        t1.health = min(t1.health + 30, t1.maxHealth);
+      }
+      powerups.remove(i);
+      continue;
+    }
+    if (p.offScreen()) powerups.remove(i);
+  }
+
+  //Obstacle Spawn
   if (spawnTimer.isFinished()) {
-    int t = int(random(0, 3));
-
-    obstacles.add(new Obstacle(
-      random(50, width - 50),
-      random(50, height / 2),
-      80, 80,
-      random(0.5, 2.5),
-      100,
-      t
-    ));
-
+    obstacles.add(new Obstacle(random(50, width - 50), random(50, height / 2), 80, 80, random(0.5, 2.5), 100, int(random(0, 3))));
     spawnTimer.start();
   }
 
-  // Obstacles (enemy tank, rock, sandbag)
+  // Collision
   for (int i = obstacles.size() - 1; i >= 0; i--) {
     Obstacle o = obstacles.get(i);
     o.move();
     o.display();
 
-    if (o.type == 0 && o.intersectsTank(t1)) {
-      t1.health -= 0.5;
-    }
+    if (o.type == 0 && o.intersectsTank(t1)) t1.health -= 0.5;
 
-    // Sandbags give ammo and then disappear
     if (o.type == 2 && o.intersectsTank(t1)) {
       ammo = min(ammo + 5, maxAmmo);
       obstacles.remove(i);
+      continue;
+    }
+    
+    float d = dist(t1.x, t1.y, o.x, o.y);
+    float minDist = (t1.w/2 + o.w/2) * 0.8; // 0.8 makes them actually touch
+
+    if (d < minDist) {
+      float overlap = minDist - d;
+      float dx = (t1.x - o.x) / d;
+      float dy = (t1.y - o.y) / d;
+      t1.x += dx * overlap;
+      t1.y += dy * overlap;
     }
   }
 
@@ -116,59 +151,66 @@ void draw() {
 
     if (p.reachedEdge()) {
       shots.remove(i);
+      continue;
     }
-  }
 
-  for (int i = obstacles.size() - 1; i >= 0; i--) {
-    Obstacle o = obstacles.get(i);
-
-    for (int j = shots.size() - 1; j >= 0; j--) {
-      Projectile p = shots.get(j);
-
+    for (int j = obstacles.size() - 1; j >= 0; j--) {
+      Obstacle o = obstacles.get(j);
       if (o.intersect(p)) {
-        if (o.type == 1) {
-          shots.remove(j);
+        if (o.type == 1) { // Rock
+          o.health -= 35; // Takes 3 hits
+          shots.remove(i);
+          if (o.health <= 0) {
+            explosions.add(new Explosion(o.x, o.y));
+            obstacles.remove(j);
+            score += 5;
+          }
+          break; 
+        } else { // Enemy or Sandbag
+          score += 10;
+          explosions.add(new Explosion(o.x, o.y));
+          shots.remove(i);
+          obstacles.remove(j);
           break;
         }
-
-        score += 10;
-        explosions.add(new Explosion(o.x, o.y));
-
-        shots.remove(j);
-        obstacles.remove(i);
-        break;
       }
     }
   }
 
+  // Explosion
   for (int i = explosions.size() - 1; i >= 0; i--) {
     Explosion e = explosions.get(i);
     e.update();
     e.display();
-    if (!e.alive) {
-      explosions.remove(i);
+    if (!e.alive) explosions.remove(i);
+  }
+
+  if (rapidFire) {
+    if (frameCount % 6 == 0) { 
+      shots.add(new Projectile(t1.x, t1.y, mouseX, mouseY));
+    }
+    if (millis() > rapidFireTimer) {
+      rapidFire = false;
     }
   }
 
   t1.display();
-
   drawUI();
 
-  if (t1.health <= 0) {
-    gameOver = true;
-  }
+  if (t1.health <= 0) gameOver = true;
 }
 
 void drawUI() {
   fill(255);
   textSize(20);
+  textAlign(LEFT);
   text("Score: " + score, 20, 30);
-  text("Ammo: " + ammo, 20, 55);
+  text("Ammo: " + (rapidFire ? "INFINITE" : str(ammo)), 20, 55);
   text("Health: " + int(t1.health), 20, 80);
 }
 
 void drawGameOverScreen() {
-  background(0, 0, 0, 200);
+  background(0, 150);
   fill(255);
   textAlign(CENTER, CENTER);
   textSize(40);
@@ -176,7 +218,6 @@ void drawGameOverScreen() {
   textSize(20);
   text("Score: " + score, width/2, height/2);
 
-  // Restart button
   rectMode(CENTER);
   fill(100, 200, 100);
   rect(width/2, height/2 + 60, 150, 40);
@@ -192,21 +233,21 @@ void resetGame() {
   shots.clear();
   mines.clear();
   explosions.clear();
+  powerups.clear();
 
   obstacles.add(new Obstacle(width/2, 100, 80, 80, 2, 100, 0));
 
   for (int i = 0; i < 5; i++) {
-    mines.add(new Landmine(
-      random(50, width - 50),
-      random(150, height - 50)
-    ));
+    mines.add(new Landmine(random(50, width - 50), random(150, height - 50)));
   }
 
   score = 0;
   ammo = maxAmmo;
+  rapidFire = false;
   gameOver = false;
 
   spawnTimer.start();
+  powerUpTimer.start();
 }
 
 void keyPressed() {
@@ -227,16 +268,13 @@ void mousePressed() {
   if (gameOver) {
     float bx = width/2;
     float by = height/2 + 60;
-    float bw = 150;
-    float bh = 40;
-    if (mouseX > bx - bw/2 && mouseX < bx + bw/2 &&
-        mouseY > by - bh/2 && mouseY < by + bh/2) {
+    if (mouseX > bx - 75 && mouseX < bx + 75 && mouseY > by - 20 && mouseY < by + 20) {
       resetGame();
     }
     return;
   }
 
-  if (ammo > 0) {
+  if (!rapidFire && ammo > 0) {
     shots.add(new Projectile(t1.x, t1.y, mouseX, mouseY));
     ammo--;
   }
