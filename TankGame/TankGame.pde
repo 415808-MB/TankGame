@@ -14,6 +14,7 @@ boolean rapidFire = false;
 int rapidFireTimer = 0;
 
 PImage bg;
+boolean playings = false;
 
 int score = 0;
 int ammo = 20;
@@ -48,11 +49,35 @@ void setup() {
 }
 
 void draw() {
-  if (bg != null) {
-    background(bg);
-  } else {
-    background(50);
+
+  // -------------------------
+  // START SCREEN
+  // -------------------------
+  if (!playings) {
+    background(0);
+    fill(255);
+    textSize(50);
+    text("TANK GAME", 100, 250);
+    textSize(40);
+    text("START: press space", 80, 300);
+
+    if (key == ' ') {
+      playings = true;
+    }
+
+    return;  // <-- prevents game from drawing underneath
   }
+
+  // -------------------------
+  // GAME RUNS HERE
+  // -------------------------
+  run();
+}
+
+void run() {
+
+  if (bg != null) background(bg);
+  else background(50);
 
   if (gameOver) {
     drawGameOverScreen();
@@ -86,7 +111,7 @@ void draw() {
     }
   }
 
-//PowerUp
+  // PowerUp
   if (powerUpTimer.isFinished()) {
     powerups.add(new PowerUp(random(50, width - 50), -40));
     powerUpTimer.start();
@@ -98,11 +123,11 @@ void draw() {
     p.display();
 
     if (p.intersectsTank(t1)) {
-      if (p.type == 0) { 
+      if (p.type == 0) {
         rapidFire = true;
         rapidFireTimer = millis() + 5000;
       }
-      if (p.type == 1) { 
+      if (p.type == 1) {
         t1.health = min(t1.health + 30, t1.maxHealth);
       }
       powerups.remove(i);
@@ -111,7 +136,7 @@ void draw() {
     if (p.offScreen()) powerups.remove(i);
   }
 
-  //Obstacle Spawn
+  // Obstacle Spawn
   if (spawnTimer.isFinished()) {
     obstacles.add(new Obstacle(random(50, width - 50), random(50, height / 2), 80, 80, random(0.5, 2.5), 100, int(random(0, 3))));
     spawnTimer.start();
@@ -130,9 +155,9 @@ void draw() {
       obstacles.remove(i);
       continue;
     }
-    
+
     float d = dist(t1.x, t1.y, o.x, o.y);
-    float minDist = (t1.w/2 + o.w/2) * 0.8; // 0.8 makes them actually touch
+    float minDist = (t1.w/2 + o.w/2) * 0.8;
 
     if (d < minDist) {
       float overlap = minDist - d;
@@ -157,16 +182,16 @@ void draw() {
     for (int j = obstacles.size() - 1; j >= 0; j--) {
       Obstacle o = obstacles.get(j);
       if (o.intersect(p)) {
-        if (o.type == 1) { // Rock
-          o.health -= 35; // Takes 3 hits
+        if (o.type == 1) {
+          o.health -= 35;
           shots.remove(i);
           if (o.health <= 0) {
             explosions.add(new Explosion(o.x, o.y));
             obstacles.remove(j);
             score += 5;
           }
-          break; 
-        } else { // Enemy or Sandbag
+          break;
+        } else {
           score += 10;
           explosions.add(new Explosion(o.x, o.y));
           shots.remove(i);
@@ -177,7 +202,7 @@ void draw() {
     }
   }
 
-  // Explosion
+  // Explosions
   for (int i = explosions.size() - 1; i >= 0; i--) {
     Explosion e = explosions.get(i);
     e.update();
@@ -185,13 +210,12 @@ void draw() {
     if (!e.alive) explosions.remove(i);
   }
 
+  // Rapid Fire
   if (rapidFire) {
-    if (frameCount % 6 == 0) { 
+    if (frameCount % 6 == 0) {
       shots.add(new Projectile(t1.x, t1.y, mouseX, mouseY));
     }
-    if (millis() > rapidFireTimer) {
-      rapidFire = false;
-    }
+    if (millis() > rapidFireTimer) rapidFire = false;
   }
 
   t1.display();
